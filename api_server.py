@@ -7,6 +7,7 @@ from PIL import Image
 import io
 import base64
 import json
+import os
 
 app = FastAPI(
     title="Rembg API - AI背景去除服务",
@@ -177,9 +178,13 @@ async def remove_background_batch(files: list[UploadFile] = File(...)):
     }
 
 if __name__ == "__main__":
+    # 从环境变量获取端口，默认为8000
+    port = int(os.environ.get("PORT", 8000))
+    host = "0.0.0.0"  # 改为 0.0.0.0 以便 Render 能够访问
+    
     print("🚀 正在启动Rembg API服务器...")
-    print("📝 API文档地址: http://127.0.0.1:8000/docs")
-    print("🎯 健康检查: http://127.0.0.1:8000/health")
+    print(f"📝 API文档地址: http://{host}:{port}/docs")
+    print(f"🎯 健康检查: http://{host}:{port}/health")
     print("💡 主要接口:")
     print("   - POST /remove-bg (文件上传)")
     print("   - POST /remove-bg-base64 (Base64)")
@@ -187,7 +192,7 @@ if __name__ == "__main__":
     
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=8000,
-        reload=True
+        host=host,
+        port=port,
+        reload=False  # 生产环境建议关闭 reload
     ) 

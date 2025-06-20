@@ -33,9 +33,13 @@ def start_api():
     if not check_dependencies():
         return
     
+    # 从环境变量获取端口，默认为8000
+    port = int(os.environ.get("PORT", 8000))
+    host = "0.0.0.0"  # 改为 0.0.0.0 以便外部访问
+    
     print("🚀 正在启动Rembg API服务器...")
-    print("📝 API文档地址: http://127.0.0.1:8000/docs")
-    print("🎯 健康检查: http://127.0.0.1:8000/health")
+    print(f"📝 API文档地址: http://{host}:{port}/docs")
+    print(f"🎯 健康检查: http://{host}:{port}/health")
     print("💡 按 Ctrl+C 停止服务器")
     print("=" * 50)
     
@@ -43,7 +47,7 @@ def start_api():
         # 启动uvicorn服务器
         subprocess.run([
             sys.executable, "-c",
-            "import uvicorn; uvicorn.run('api_server:app', host='127.0.0.1', port=8000, reload=True)"
+            f"import uvicorn; uvicorn.run('api_server:app', host='{host}', port={port}, reload=False)"
         ])
     except KeyboardInterrupt:
         print("\n👋 API服务器已停止")
