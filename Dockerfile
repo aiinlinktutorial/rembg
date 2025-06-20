@@ -17,5 +17,5 @@ RUN pip install fastapi uvicorn[standard] python-multipart pillow gunicorn
 # 暴露端口 (Render 会自动设置 PORT 环境变量)
 EXPOSE $PORT
 
-# 启动 API 服务器 (使用 Gunicorn 进行生产部署)
-CMD ["gunicorn", "-c", "gunicorn_config.py", "api_server:app"]
+# 启动 API 服务器
+CMD ["python", "api_server.py"]
