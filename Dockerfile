@@ -14,12 +14,8 @@ RUN rembg d u2net
 # 安装 API 依赖
 RUN pip install fastapi uvicorn[standard] python-multipart pillow
 
-# 复制并设置启动脚本权限
-COPY start_server.sh /rembg/start_server.sh
-RUN chmod +x /rembg/start_server.sh
-
 # 暴露端口 (Render 会自动设置 PORT 环境变量)
 EXPOSE $PORT
 
-# 启动 API 服务器
-CMD ["./start_server.sh"]
+# 启动 API 服务器 - 直接使用 Python
+CMD ["python", "-c", "import os; import uvicorn; port=int(os.environ.get('PORT', 10000)); print(f'Starting on port {port}'); uvicorn.run('api_server:app', host='0.0.0.0', port=port, workers=1)"]
