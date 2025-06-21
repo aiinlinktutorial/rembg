@@ -10,6 +10,7 @@
 !README.md
 !api_server.py
 !start_api.py
+!start_server.sh
 !gradio_app.py
 !test_api.py
 !render.yaml
