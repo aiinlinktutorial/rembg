@@ -1,6 +1,7 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Header, status
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 from rembg import remove
 from PIL import Image
@@ -8,12 +9,40 @@ import io
 import base64
 import json
 import os
+from typing import Optional
 
 app = FastAPI(
     title="Rembg API - AI背景去除服务",
-    description="提供AI智能背景去除功能的REST API",
+    description="提供AI智能背景去除功能的REST API，需要API Key认证",
     version="1.0.0"
 )
+
+# API Key配置
+API_KEY = os.environ.get("API_KEY", "your-secret-api-key-here")  # 从环境变量获取API Key
+security = HTTPBearer()
+
+# API Key验证函数
+async def verify_api_key(
+    authorization: HTTPAuthorizationCredentials = Depends(security)
+) -> str:
+    """验证API Key"""
+    if authorization.credentials != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return authorization.credentials
+
+# 或者通过Header验证API Key的替代方法
+async def verify_api_key_header(x_api_key: Optional[str] = Header(None)) -> str:
+    """通过X-API-Key Header验证"""
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key. Please provide X-API-Key header.",
+        )
+    return x_api_key
 
 # 添加CORS中间件支持跨域请求
 app.add_middleware(
@@ -30,10 +59,17 @@ async def root():
     return {
         "message": "Rembg API - AI背景去除服务",
         "version": "1.0.0",
+        "authentication": "Required - Use X-API-Key header",
         "endpoints": {
-            "remove_background": "/remove-bg",
-            "remove_background_base64": "/remove-bg-base64",
-            "health": "/health"
+            "remove_background": "/remove-bg (需要API Key)",
+            "remove_background_base64": "/remove-bg-base64 (需要API Key)",
+            "remove_background_batch": "/remove-bg-batch (需要API Key)",
+            "health": "/health (公开访问)",
+            "docs": "/docs (API文档)"
+        },
+        "usage": {
+            "header": "X-API-Key: your-api-key",
+            "example": "curl -H 'X-API-Key: your-api-key' -X POST ..."
         }
     }
 
@@ -43,7 +79,10 @@ async def health_check():
     return {"status": "healthy", "service": "rembg-api"}
 
 @app.post("/remove-bg")
-async def remove_background_file(file: UploadFile = File(...)):
+async def remove_background_file(
+    file: UploadFile = File(...),
+    api_key: str = Depends(verify_api_key_header)
+):
     """
     上传图片文件进行背景去除
     
@@ -77,7 +116,10 @@ async def remove_background_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"处理图片时发生错误: {str(e)}")
 
 @app.post("/remove-bg-base64")
-async def remove_background_base64(request_data: dict):
+async def remove_background_base64(
+    request_data: dict,
+    api_key: str = Depends(verify_api_key_header)
+):
     """
     通过Base64编码的图片进行背景去除
     
@@ -127,7 +169,10 @@ async def remove_background_base64(request_data: dict):
         raise HTTPException(status_code=500, detail=f"处理图片时发生错误: {str(e)}")
 
 @app.post("/remove-bg-batch")
-async def remove_background_batch(files: list[UploadFile] = File(...)):
+async def remove_background_batch(
+    files: list[UploadFile] = File(...),
+    api_key: str = Depends(verify_api_key_header)
+):
     """
     批量处理多张图片的背景去除
     

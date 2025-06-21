@@ -11,4 +11,6 @@ services:
       - key: PORT
         value: 10000
       - key: PYTHONUNBUFFERED
-        value: 1 
+        value: 1
+      - key: API_KEY
+        generateValue: true  # 自动生成一个安全的API Key 
