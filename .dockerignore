@@ -5,6 +5,12 @@
 !requirements.txt
 !requirements-cpu.txt
 !requirements-gpu.txt
+!requirements_api.txt
 !versioneer.py
 !README.md
+!api_server.py
+!start_api.py
+!gradio_app.py
+!test_api.py
+!render.yaml
 .env
