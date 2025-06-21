@@ -17,5 +17,5 @@ RUN pip install fastapi uvicorn[standard] python-multipart pillow
 # 暴露端口 (Render 会自动设置 PORT 环境变量)
 EXPOSE $PORT
 
-# 启动 API 服务器 - 最简单的方式
-CMD ["sh", "-c", "python -m uvicorn api_server:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# 启动 API 服务器 - 确保使用正确的端口绑定
+CMD ["sh", "-c", "python -m uvicorn api_server:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]

@@ -7,6 +7,7 @@ services:
     plan: starter
     branch: main
     healthCheckPath: /health
+    dockerCommand: uvicorn api_server:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
       - key: PORT
         value: 10000
