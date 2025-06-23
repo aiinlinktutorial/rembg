@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rembg API 测试工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .api-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .api-url {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 Rembg API 测试工具</h1>
+
+        <div class="api-info">
+            <h3>API 信息</h3>
+            <p><strong>服务地址:</strong> <span class="api-url">https://rembg-l2mt.onrender.com</span></p>
+            <p><strong>在线文档:</strong> <a href="https://rembg-l2mt.onrender.com/docs" target="_blank">查看Swagger文档</a></p>
+            <p><strong>健康检查:</strong> <a href="https://rembg-l2mt.onrender.com/health" target="_blank">测试服务状态</a></p>
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">API 密钥 *</label>
+            <input type="text" id="apiKey" placeholder="请输入您的API密钥" required>
+            <small style="color: #666;">请联系API提供者获取密钥</small>
+        </div>
+
+        <div class="form-group">
+            <label for="imageFile">选择图片文件</label>
+            <input type="file" id="imageFile" accept="image/*">
+            <small style="color: #666;">支持 JPG, PNG, BMP, GIF 等格式</small>
+        </div>
+
+        <div>
+            <button onclick="testHealthCheck()">测试服务状态</button>
+            <button onclick="removeBackground()">去除背景</button>
+            <button onclick="clearResult()">清除结果</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://rembg-l2mt.onrender.com';
+
+        function showResult(content, type = 'success') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = content;
+        }
+
+        function clearResult() {
+            document.getElementById('result').innerHTML = '';
+        }
+
+        async function testHealthCheck() {
+            showResult('正在检查服务状态...', 'loading');
+
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        <h3>✅ 服务状态正常</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <h3>❌ 服务异常</h3>
+                        <p>状态码: ${response.status}</p>
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <h3>❌ 连接失败</h3>
+                    <p>错误: ${error.message}</p>
+                    <p>请检查网络连接或服务是否可用</p>
+                `, 'error');
+            }
+        }
+
+        async function removeBackground() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const fileInput = document.getElementById('imageFile');
+            const file = fileInput.files[0];
+
+            // 验证输入
+            if (!apiKey) {
+                showResult('<h3>❌ 请输入API密钥</h3>', 'error');
+                return;
+            }
+
+            if (!file) {
+                showResult('<h3>❌ 请选择图片文件</h3>', 'error');
+                return;
+            }
+
+            // 显示加载状态
+            showResult(`
+                <h3>🔄 正在处理图片...</h3>
+                <p>文件名: ${file.name}</p>
+                <p>文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p>请稍候，处理可能需要几秒钟...</p>
+            `, 'loading');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}/remove-bg`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey
+                    },
+                    body: formData
+                });
+
+                const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+
+                    showResult(`
+                        <h3>🎉 背景去除成功！</h3>
+                        <p>处理时间: ${processingTime} 秒</p>
+                        <img src="${imageUrl}" alt="处理后的图片">
+                        <br>
+                        <a href="${imageUrl}" download="removed_background.png">
+                            <button>💾 下载图片</button>
+                        </a>
+                    `, 'success');
+                } else {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorText = await response.text();
+                        errorMessage += `: ${errorText}`;
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+
+                    showResult(`
+                        <h3>❌ 处理失败</h3>
+                        <p>错误信息: ${errorMessage}</p>
+                        <p>处理时间: ${processingTime} 秒</p>
+                        ${response.status === 401 ? '<p><strong>提示:</strong> 请检查API密钥是否正确</p>' : ''}
+                        ${response.status === 413 ? '<p><strong>提示:</strong> 文件过大，请尝试较小的图片</p>' : ''}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <h3>❌ 网络错误</h3>
+                    <p>错误: ${error.message}</p>
+                    <p>请检查网络连接或稍后重试</p>
+                `, 'error');
+            }
+        }
+
+        // 页面加载时自动测试服务状态
+        window.addEventListener('load', function () {
+            setTimeout(() => {
+                testHealthCheck();
+            }, 1000);
+        });
+
+        // 支持拖拽上传
+        const fileInput = document.getElementById('imageFile');
+        const container = document.querySelector('.container');
+
+        container.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            container.style.backgroundColor = '#e3f2fd';
+        });
+
+        container.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            container.style.backgroundColor = 'white';
+        });
+
+        container.addEventListener('drop', function (e) {
+            e.preventDefault();
+            container.style.backgroundColor = 'white';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                fileInput.files = files;
+                showResult(`<p>✅ 已选择文件: ${files[0].name}</p>`, 'success');
+            }
+        });
+    </script>
+</body>
+
+</html>
